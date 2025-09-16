@@ -1,0 +1,49 @@
+name: Trigger auto deployment for azure-deploy-dev
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ dev ]
+    paths:
+    - '**'
+    - '.github/workflows/azure-deploy-dev-AutoDeployTrigger-f027eae0-fc6b-46fa-b086-4ac9caf34a82.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREDEPLOYDEV_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZUREDEPLOYDEV_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZUREDEPLOYDEV_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}/Dockerfile.dev
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: docker.io
+          registryUsername: ${{ secrets.AZUREDEPLOYDEV_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.AZUREDEPLOYDEV_REGISTRY_PASSWORD }}
+          containerAppName: azure-deploy-dev
+          resourceGroup: deploy-app
+          imageToBuild: sarvancm/azure-deploy-dev:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
