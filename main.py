@@ -7,7 +7,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Environment Checker API is running"}
+    return {"message": "Environment Checker dev API is running"}
 @app.get("/env")
 async def check_environment():
     return {
